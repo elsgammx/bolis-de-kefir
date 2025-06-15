@@ -499,6 +499,7 @@
             <button class="nav-tab" onclick="showSection('stock', event)">📦 Stock</button>
             <button class="nav-tab" onclick="showSection('ganancias', event)">💰 Ganancias</button>
             <button class="nav-tab" onclick="showSection('config', event)">⚙️ Config</button>
+            <button class="nav-tab" onclick="showSection('recetas', event)">📋 Recetas</button>
         </nav>
 
         <div class="content">
@@ -611,6 +612,61 @@
                     <p style="color: #666; font-size: 0.9rem;">Datos almacenados localmente</p>
                 </div>
             </div>
+
+            <!-- Sección de Recetas -->
+            <div id="recetas" class="section">
+                <h3 style="margin-bottom: 1rem; color: #1976d2;">Recetas de Congeladas</h3>
+
+                <button class="btn-primary" onclick="exportRecipes()">📥 Exportar Recetas</button>
+
+                <div id="recipeList"></div>
+
+                <h4 style="margin-top: 2rem; color: #1976d2;">Agregar / Editar Receta</h4>
+
+                <div class="input-group">
+                    <label>Nombre de la congelada:</label>
+                    <input type="text" id="recipeName" placeholder="Nombre de la congelada" />
+                </div>
+
+                <div class="input-group">
+                    <label>Fruta (kg o pz):</label>
+                    <input type="number" id="recipeFrutaQty" min="0" step="0.01" />
+                    <input type="number" id="recipeFrutaPrice" min="0" step="0.01" placeholder="Precio por kg o pz" />
+                </div>
+                <div class="input-group">
+                    <label>Kefir (litro):</label>
+                    <input type="number" id="recipeKefirQty" min="0" step="0.01" />
+                    <input type="number" id="recipeKefirPrice" min="0" step="0.01" placeholder="Precio por litro" />
+                </div>
+                <div class="input-group">
+                    <label>Lechera (pieza):</label>
+                    <input type="number" id="recipeLecheraQty" min="0" step="1" />
+                    <input type="number" id="recipeLecheraPrice" min="0" step="0.01" placeholder="Precio por pieza" />
+                </div>
+                <div class="input-group">
+                    <label>Saborizante (ml):</label>
+                    <input type="number" id="recipeSaborizanteQty" min="0" step="0.01" />
+                    <input type="number" id="recipeSaborizantePrice" min="0" step="0.01" placeholder="Precio por ml" />
+                </div>
+                <div class="input-group">
+                    <label>Bolsas (pieza):</label>
+                    <input type="number" id="recipeBolsasQty" min="0" step="1" />
+                    <input type="number" id="recipeBolsasPrice" min="0" step="0.01" placeholder="Precio por pieza" />
+                </div>
+                <div class="input-group">
+                    <label>Trozos (pieza):</label>
+                    <input type="number" id="recipeTrozosQty" min="0" step="1" />
+                    <input type="number" id="recipeTrozosPrice" min="0" step="0.01" placeholder="Precio por pieza" />
+                </div>
+
+                <div class="input-group">
+                    <label>Costo unitario por pieza (calculado):</label>
+                    <input type="text" id="unitCost" readonly style="background:#e3f2fd; font-weight:bold;" />
+                </div>
+
+                <button class="btn-primary" onclick="saveRecipe()">Guardar Receta</button>
+                <button class="btn-secondary" onclick="clearRecipeForm()">Cancelar</button>
+            </div>
         </div>
     </div>
 
@@ -684,6 +740,8 @@
             stock: {},
             costs: {},
             currentFilter: "today",
+            recipes: [], // nuevo array para recetas
+            editingRecipeId: null, // para edición de receta
         };
 
         // Inicializar la app
@@ -695,6 +753,8 @@
             updateReports();
             renderPremiumList();
             updateGains();
+            renderRecipes(); // renderizar recetas
+            assignRecipeInputEvents(); // asignar eventos para cálculo automático
         }
 
         // Cargar datos del localStorage
@@ -711,6 +771,9 @@
                     } else {
                         appState.flavors = parsed.flavors;
                     }
+                }
+                if (Array.isArray(parsed.recipes)) {
+                    appState.recipes = parsed.recipes;
                 }
                 appState = { ...appState, ...parsed };
             }
@@ -753,6 +816,9 @@
             }
             if (sectionId === "ganancias") {
                 updateGains();
+            }
+            if (sectionId === "recetas") {
+                renderRecipes();
             }
         }
 
@@ -807,29 +873,28 @@
             cartItems.innerHTML = "";
 
             let total = 0;
+            let totalQuantity = 0;
 
-            // Calcular cantidad total de sabores normales (no premium)
-            let totalNormalQuantity = 0;
-            Object.entries(appState.cart).forEach(([flavorName, qty]) => {
-                const flavorObj = appState.flavors.find((f) => f.name === flavorName);
-                if (flavorObj && !flavorObj.premium) {
-                    totalNormalQuantity += qty;
-                }
+            // Calcular la cantidad total de congeladas en el carrito
+            Object.values(appState.cart).forEach(qty => {
+                totalQuantity += qty;
             });
 
-            // Calcular precios con descuentos solo para sabores normales
+            // Determinar el precio base según la cantidad total
+            let normalPrice = 30;
+            let premiumPrice = 30;
+
+            if (totalQuantity >= 2 && totalQuantity <= 9) {
+                normalPrice = 25;
+            } else if (totalQuantity >= 10) {
+                normalPrice = 23;
+                premiumPrice = 25;
+            }
+
+            // Calcular el subtotal para cada sabor y actualizar el total
             Object.entries(appState.cart).forEach(([flavorName, qty]) => {
                 const flavorObj = appState.flavors.find((f) => f.name === flavorName);
-                let price = 30; // Precio base
-
-                if (!flavorObj.premium) {
-                    if (totalNormalQuantity >= 10) {
-                        price = 23; // Más de 10 piezas normales
-                    } else if (totalNormalQuantity >= 2 && totalNormalQuantity <= 9) {
-                        price = 25; // Entre 2 y 9 piezas normales
-                    }
-                }
-
+                const price = flavorObj.premium ? premiumPrice : normalPrice;
                 const subtotal = price * qty;
                 total += subtotal;
 
@@ -853,12 +918,8 @@
             }
 
             const saleDate = document.getElementById("saleDate").value;
-            const clientName =
-                document.getElementById("clientName").value.trim() || "Cliente no especificado";
+            const clientName = document.getElementById("clientName").value.trim() || "Cliente no especificado";
             const paymentType = document.getElementById("paymentType").value;
-
-            let totalNormalQuantity = 0;
-            let total = 0;
 
             // Verificar stock
             for (const [flavorName, qty] of Object.entries(appState.cart)) {
@@ -866,26 +927,33 @@
                     showToast(`Stock insuficiente de ${flavorName}`);
                     return;
                 }
-                const flavorObj = appState.flavors.find((f) => f.name === flavorName);
-                if (flavorObj && !flavorObj.premium) {
-                    totalNormalQuantity += qty;
-                }
             }
 
-            // Calcular total con descuentos solo para sabores normales
+            let total = 0;
+            let totalQuantity = 0;
+
+            // Calcular la cantidad total de congeladas en el carrito
+            Object.values(appState.cart).forEach(qty => {
+                totalQuantity += qty;
+            });
+
+            // Determinar el precio base según la cantidad total
+            let normalPrice = 30;
+            let premiumPrice = 30;
+
+            if (totalQuantity >= 2 && totalQuantity <= 9) {
+                normalPrice = 25;
+            } else if (totalQuantity >= 10) {
+                normalPrice = 23;
+                premiumPrice = 25;
+            }
+
+            // Calcular el subtotal para cada sabor y actualizar el total
             Object.entries(appState.cart).forEach(([flavorName, qty]) => {
                 const flavorObj = appState.flavors.find((f) => f.name === flavorName);
-                let price = 30;
-
-                if (!flavorObj.premium) {
-                    if (totalNormalQuantity >= 10) {
-                        price = 23;
-                    } else if (totalNormalQuantity >= 2 && totalNormalQuantity <= 9) {
-                        price = 25;
-                    }
-                }
-
-                total += price * qty;
+                const price = flavorObj.premium ? premiumPrice : normalPrice;
+                const subtotal = price * qty;
+                total += subtotal;
 
                 // Actualizar stock solo si no es deuda
                 if (paymentType !== "Debe") {
@@ -1336,7 +1404,7 @@
             document.getElementById("costModal").classList.remove("active");
         }
 
-        // Exportar reporte (función actualizada para móviles)
+        // Exportar reporte
         function exportReport() {
             const reportData = {
                 fecha: new Date().toLocaleDateString(),
@@ -1379,27 +1447,14 @@
                 csv += `${sale.date},"${sale.client}","${sale.paymentType}","${items}",$${sale.total}\n`;
             });
 
-            try {
-                const blob = new Blob([csv], { type: "text/csv" });
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `reporte_congeladas_${new Date().toISOString().split("T")[0]}.csv`;
+            a.click();
 
-                if (navigator.msSaveOrOpenBlob) {
-                    navigator.msSaveOrOpenBlob(blob, `reporte_congeladas_${new Date().toISOString().split("T")[0]}.csv`);
-                } else {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `reporte_congeladas_${new Date().toISOString().split("T")[0]}.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }
-
-                showToast("Reporte exportado exitosamente");
-            } catch (error) {
-                console.error("Error al exportar el reporte:", error);
-                showToast("Error al exportar el reporte");
-            }
+            showToast("Reporte exportado exitosamente");
         }
 
         // Formatear fecha
@@ -1423,6 +1478,267 @@
         // Capitalizar texto
         function capitalize(text) {
             return text.charAt(0).toUpperCase() + text.slice(1);
+        }
+
+        // --- MÓDULO DE RECETAS ---
+
+        // Generar ID con fecha + timestamp
+        function generateRecipeId() {
+            const now = new Date();
+            const dateString = now.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
+            const timeString = Date.now().toString(); // timestamp para unicidad
+            return dateString + timeString;
+        }
+
+        // Renderizar lista de recetas con eventos addEventListener
+        function renderRecipes() {
+            const list = document.getElementById("recipeList");
+            list.innerHTML = "";
+
+            if (appState.recipes.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>No hay recetas guardadas</p></div>';
+                return;
+            }
+
+            appState.recipes.forEach((recipe) => {
+                const div = document.createElement("div");
+                div.className = "stock-item";
+                div.style.justifyContent = "space-between";
+
+                div.innerHTML = `
+                    <div>
+                        <strong>${recipe.name}</strong> (ID: ${recipe.id})<br/>
+                        Costo unitario: ${formatPrice(recipe.unitCost || 0)}<br/>
+                        Fruta: ${recipe.fruta.qty} (${formatPrice(recipe.fruta.price)})<br/>
+                        Kefir: ${recipe.kefir.qty} (${formatPrice(recipe.kefir.price)})<br/>
+                        Lechera: ${recipe.lechera.qty} (${formatPrice(recipe.lechera.price)})<br/>
+                        Saborizante: ${recipe.saborizante.qty} (${formatPrice(recipe.saborizante.price)})<br/>
+                        Bolsas: ${recipe.bolsas.qty} (${formatPrice(recipe.bolsas.price)})<br/>
+                        Trozos: ${recipe.trozos.qty} (${formatPrice(recipe.trozos.price)})
+                    </div>
+                    <div>
+                        <button class="btn-secondary btn-edit" style="margin-bottom: 0.5rem;">Editar</button><br/>
+                        <button class="btn-secondary btn-delete">Eliminar</button>
+                    </div>
+                `;
+
+                // Asignar eventos con addEventListener
+                const btnEdit = div.querySelector(".btn-edit");
+                btnEdit.addEventListener("click", () => editRecipe(recipe.id));
+
+                const btnDelete = div.querySelector(".btn-delete");
+                btnDelete.addEventListener("click", () => deleteRecipe(recipe.id));
+
+                list.appendChild(div);
+            });
+        }
+
+        // Guardar receta (nuevo o editar) con ID y costo unitario
+        function saveRecipe() {
+            // Calcular costo unitario antes de guardar
+            const frutaCost = (parseFloat(document.getElementById("recipeFrutaQty").value) || 0) * (parseFloat(document.getElementById("recipeFrutaPrice").value) || 0);
+            const kefirCost = (parseFloat(document.getElementById("recipeKefirQty").value) || 0) * (parseFloat(document.getElementById("recipeKefirPrice").value) || 0);
+            const lecheraCost = (parseInt(document.getElementById("recipeLecheraQty").value) || 0) * (parseFloat(document.getElementById("recipeLecheraPrice").value) || 0);
+            const saborizanteCost = (parseFloat(document.getElementById("recipeSaborizanteQty").value) || 0) * (parseFloat(document.getElementById("recipeSaborizantePrice").value) || 0);
+            const bolsasQty = parseInt(document.getElementById("recipeBolsasQty").value) || 0;
+            const bolsasCost = bolsasQty * (parseFloat(document.getElementById("recipeBolsasPrice").value) || 0);
+            const trozosCost = (parseInt(document.getElementById("recipeTrozosQty").value) || 0) * (parseFloat(document.getElementById("recipeTrozosPrice").value) || 0);
+
+            const totalCost = frutaCost + kefirCost + lecheraCost + saborizanteCost + bolsasCost + trozosCost;
+
+            let unitCost = 0;
+            if (bolsasQty > 0) {
+                unitCost = totalCost / bolsasQty;
+            }
+
+            const receta = {
+                id: appState.editingRecipeId || generateRecipeId(),
+                name: document.getElementById("recipeName").value.trim() || "Sin nombre",
+                fruta: {
+                    qty: parseFloat(document.getElementById("recipeFrutaQty").value) || 0,
+                    price: parseFloat(document.getElementById("recipeFrutaPrice").value) || 0,
+                },
+                kefir: {
+                    qty: parseFloat(document.getElementById("recipeKefirQty").value) || 0,
+                    price: parseFloat(document.getElementById("recipeKefirPrice").value) || 0,
+                },
+                lechera: {
+                    qty: parseInt(document.getElementById("recipeLecheraQty").value) || 0,
+                    price: parseFloat(document.getElementById("recipeLecheraPrice").value) || 0,
+                },
+                saborizante: {
+                    qty: parseFloat(document.getElementById("recipeSaborizanteQty").value) || 0,
+                    price: parseFloat(document.getElementById("recipeSaborizantePrice").value) || 0,
+                },
+                bolsas: {
+                    qty: bolsasQty,
+                    price: parseFloat(document.getElementById("recipeBolsasPrice").value) || 0,
+                },
+                trozos: {
+                    qty: parseInt(document.getElementById("recipeTrozosQty").value) || 0,
+                    price: parseFloat(document.getElementById("recipeTrozosPrice").value) || 0,
+                },
+                unitCost: unitCost, // Guardar costo unitario calculado
+            };
+
+            if (appState.editingRecipeId === null) {
+                appState.recipes.push(receta);
+                showToast("Receta agregada");
+            } else {
+                const index = appState.recipes.findIndex(r => r.id === appState.editingRecipeId);
+                if (index !== -1) {
+                    appState.recipes[index] = receta;
+                    showToast("Receta actualizada");
+                }
+            }
+
+            appState.editingRecipeId = null;
+            clearRecipeForm();
+            saveData();
+            renderRecipes();
+        }
+
+        // Limpiar formulario de receta
+        function clearRecipeForm() {
+            appState.editingRecipeId = null;
+            document.getElementById("recipeName").value = "";
+            document.getElementById("recipeFrutaQty").value = "";
+            document.getElementById("recipeFrutaPrice").value = "";
+            document.getElementById("recipeKefirQty").value = "";
+            document.getElementById("recipeKefirPrice").value = "";
+            document.getElementById("recipeLecheraQty").value = "";
+            document.getElementById("recipeLecheraPrice").value = "";
+            document.getElementById("recipeSaborizanteQty").value = "";
+            document.getElementById("recipeSaborizantePrice").value = "";
+            document.getElementById("recipeBolsasQty").value = "";
+            document.getElementById("recipeBolsasPrice").value = "";
+            document.getElementById("recipeTrozosQty").value = "";
+            document.getElementById("recipeTrozosPrice").value = "";
+            document.getElementById("unitCost").value = "";
+        }
+
+        // Editar receta
+        function editRecipe(id) {
+            const receta = appState.recipes.find(r => r.id === id);
+            if (!receta) {
+                showToast("Receta no encontrada");
+                return;
+            }
+
+            appState.editingRecipeId = id;
+
+            document.getElementById("recipeName").value = receta.name || "";
+            document.getElementById("recipeFrutaQty").value = receta.fruta.qty;
+            document.getElementById("recipeFrutaPrice").value = receta.fruta.price;
+            document.getElementById("recipeKefirQty").value = receta.kefir.qty;
+            document.getElementById("recipeKefirPrice").value = receta.kefir.price;
+            document.getElementById("recipeLecheraQty").value = receta.lechera.qty;
+            document.getElementById("recipeLecheraPrice").value = receta.lechera.price;
+            document.getElementById("recipeSaborizanteQty").value = receta.saborizante.qty;
+            document.getElementById("recipeSaborizantePrice").value = receta.saborizante.price;
+            document.getElementById("recipeBolsasQty").value = receta.bolsas.qty;
+            document.getElementById("recipeBolsasPrice").value = receta.bolsas.price;
+            document.getElementById("recipeTrozosQty").value = receta.trozos.qty;
+            document.getElementById("recipeTrozosPrice").value = receta.trozos.price;
+
+            calculateUnitCost();
+
+            showSection("recetas", null);
+        }
+
+        // Eliminar receta
+        function deleteRecipe(id) {
+            if (!confirm("¿Seguro que quieres eliminar esta receta?")) return;
+
+            appState.recipes = appState.recipes.filter(r => r.id !== id);
+            saveData();
+            renderRecipes();
+            showToast("Receta eliminada");
+        }
+
+        // Formatear precio
+        function formatPrice(value) {
+            return `$${value.toFixed(2)}`;
+        }
+
+        // Calcular costo unitario por pieza y mostrarlo
+        function calculateUnitCost() {
+            const frutaCost = (parseFloat(document.getElementById("recipeFrutaQty").value) || 0) * (parseFloat(document.getElementById("recipeFrutaPrice").value) || 0);
+            const kefirCost = (parseFloat(document.getElementById("recipeKefirQty").value) || 0) * (parseFloat(document.getElementById("recipeKefirPrice").value) || 0);
+            const lecheraCost = (parseInt(document.getElementById("recipeLecheraQty").value) || 0) * (parseFloat(document.getElementById("recipeLecheraPrice").value) || 0);
+            const saborizanteCost = (parseFloat(document.getElementById("recipeSaborizanteQty").value) || 0) * (parseFloat(document.getElementById("recipeSaborizantePrice").value) || 0);
+            const bolsasQty = parseInt(document.getElementById("recipeBolsasQty").value) || 0;
+            const bolsasCost = bolsasQty * (parseFloat(document.getElementById("recipeBolsasPrice").value) || 0);
+            const trozosCost = (parseInt(document.getElementById("recipeTrozosQty").value) || 0) * (parseFloat(document.getElementById("recipeTrozosPrice").value) || 0);
+
+            const totalCost = frutaCost + kefirCost + lecheraCost + saborizanteCost + bolsasCost + trozosCost;
+
+            let unitCost = 0;
+            if (bolsasQty > 0) {
+                unitCost = totalCost / bolsasQty;
+            }
+
+            document.getElementById("unitCost").value = unitCost > 0 ? `$${unitCost.toFixed(2)}` : "$0.00";
+        }
+
+        // Asignar eventos para inputs de receta para cálculo automático
+        function assignRecipeInputEvents() {
+            const recipeInputs = [
+                "recipeFrutaQty", "recipeFrutaPrice",
+                "recipeKefirQty", "recipeKefirPrice",
+                "recipeLecheraQty", "recipeLecheraPrice",
+                "recipeSaborizanteQty", "recipeSaborizantePrice",
+                "recipeBolsasQty", "recipeBolsasPrice",
+                "recipeTrozosQty", "recipeTrozosPrice"
+            ];
+
+            recipeInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener("input", calculateUnitCost);
+                }
+            });
+        }
+
+        // Exportar recetas a CSV
+        function exportRecipes() {
+            if (appState.recipes.length === 0) {
+                showToast("No hay recetas para exportar");
+                return;
+            }
+
+            let csv = "ID,Nombre,Costo Unitario,Fruta Qty,Fruta Precio,Kefir Qty,Kefir Precio,Lechera Qty,Lechera Precio,Saborizante Qty,Saborizante Precio,Bolsas Qty,Bolsas Precio,Trozos Qty,Trozos Precio\n";
+
+            appState.recipes.forEach(recipe => {
+                const row = [
+                    `"${recipe.id}"`,
+                    `"${recipe.name.replace(/"/g, '""')}"`,
+                    recipe.unitCost.toFixed(2),
+                    recipe.fruta.qty,
+                    recipe.fruta.price.toFixed(2),
+                    recipe.kefir.qty,
+                    recipe.kefir.price.toFixed(2),
+                    recipe.lechera.qty,
+                    recipe.lechera.price.toFixed(2),
+                    recipe.saborizante.qty,
+                    recipe.saborizante.price.toFixed(2),
+                    recipe.bolsas.qty,
+                    recipe.bolsas.price.toFixed(2),
+                    recipe.trozos.qty,
+                    recipe.trozos.price.toFixed(2)
+                ].join(",");
+
+                csv += row + "\n";
+            });
+
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `recetas_congeladas_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+
+            showToast("Recetas exportadas exitosamente");
         }
 
         // Service Worker para PWA
