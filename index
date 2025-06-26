@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolis de Kefir - POS</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(45deg, #FF6B6B, #ee5a52);
+        }
+
+        .section {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .flavor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .flavor-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .flavor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .flavor-card.selected {
+            border-color: #4CAF50;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .flavor-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .flavor-price {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .flavor-card.selected .flavor-price {
+            color: white;
+        }
+
+        .quantity-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .qty-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .qty-btn:hover {
+            background: #45a049;
+            transform: scale(1.1);
+        }
+
+        .quantity {
+            font-size: 1.5rem;
+            font-weight: bold;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .total-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .total-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .action-btn {
+            background: linear-gradient(45deg, #FF6B6B, #ee5a52);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .action-btn.success {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .sales-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .sale-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .stock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+
+        .stock-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .stock-input {
+            width: 80px;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .recipe-form {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .ingredients-section {
+            margin-top: 20px;
+        }
+
+        .ingredient-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .ingredient-item input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .ingredient-item button {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .add-ingredient-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .recipes-list {
+            margin-top: 20px;
+        }
+
+        .recipe-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .recipe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .recipe-name {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        .recipe-cost {
+            font-weight: bold;
+            color: #4CAF50;
+            font-size: 1.1rem;
+        }
+
+        .recipe-ingredients {
+            margin-top: 10px;
+        }
+
+        .recipe-ingredient {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .recipe-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .recipe-actions button {
+            padding: 5px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .edit-btn {
+            background: #2196F3;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .export-btn {
+            background: #FF9800;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-buttons {
+                gap: 10px;
+            }
+            
+            .nav-btn {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            
+            .flavor-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 10px;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧊 Bolis de Kefir</h1>
+            <p>Sistema de Punto de Venta</p>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn active" onclick="showSection('ventas')">💰 Ventas</button>
+            <button class="nav-btn" onclick="showSection('reportes')">📊 Reportes</button>
+            <button class="nav-btn" onclick="showSection('inventario')">📦 Inventario</button>
+            <button class="nav-btn" onclick="showSection('ganancias')">💵 Ganancias</button>
+            <button class="nav-btn" onclick="showSection('configuracion')">⚙️ Configuración</button>
+            <button class="nav-btn" onclick="showSection('recetas')">📝 Recetas</button>
+        </div>
+
+        <!-- Sección de Ventas -->
+        <div id="ventas" class="section active">
+            <h2>💰 Realizar Venta</h2>
+            
+            <div class="flavor-grid" id="flavorGrid">
+                <!-- Los sabores se cargarán dinámicamente -->
+            </div>
+
+            <div class="quantity-controls">
+                <button class="qty-btn" onclick="changeQuantity(-1)">-</button>
+                <span class="quantity" id="quantity">1</span>
+                <button class="qty-btn" onclick="changeQuantity(1)">+</button>
+            </div>
+
+            <div class="total-section">
+                <div class="total-amount" id="totalAmount">$0.00</div>
+                <button class="action-btn success" onclick="completeSale()">Completar Venta</button>
+                <button class="action-btn" onclick="clearSale()">Limpiar</button>
+            </div>
+        </div>
+
+        <!-- Sección de Reportes -->
+        <div id="reportes" class="section">
+            <h2>📊 Reportes de Ventas</h2>
+            
+            <div class="form-group">
+                <label for="reportDate">Filtrar por fecha:</label>
+                <input type="date" id="reportDate" onchange="filterReports()">
+            </div>
+
+            <div class="sales-list" id="salesList">
+                <!-- Las ventas se cargarán dinámicamente -->
+            </div>
+
+            <div class="total-section">
+                <div class="total-amount" id="reportTotal">Total del día: $0.00</div>
+            </div>
+        </div>
+
+        <!-- Sección de Inventario -->
+        <div id="inventario" class="section">
+            <h2>📦 Control de Inventario</h2>
+            
+            <div id="stockList">
+                <!-- El inventario se cargará dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Sección de Ganancias -->
+        <div id="ganancias" class="section">
+            <h2>💵 Control de Ganancias</h2>
+            
+            <div id="profitList">
+                <!-- Las ganancias se cargarán dinámicamente -->
+            </div>
+
+            <div class="total-section">
+                <div class="total-amount" id="totalProfit">Ganancia total: $0.00</div>
+            </div>
+        </div>
+
+        <!-- Sección de Configuración -->
+        <div id="configuracion" class="section">
+            <h2>⚙️ Configuración</h2>
+            
+            <div class="form-group">
+                <label for="newFlavorName">Nombre del sabor:</label>
+                <input type="text" id="newFlavorName" placeholder="Ej: Fresa">
+            </div>
+
+            <div class="form-group">
+                <label for="newFlavorPrice">Precio de venta:</label>
+                <input type="number" id="newFlavorPrice" placeholder="15" step="0.01">
+            </div>
+
+            <div class="form-group">
+                <label for="newFlavorCost">Costo de producción:</label>
+                <input type="number" id="newFlavorCost" placeholder="8" step="0.01">
+            </div>
+
+            <button class="action-btn success" onclick="addFlavor()">Agregar Sabor</button>
+
+            <h3 style="margin-top: 30px; margin-bottom: 15px;">Sabores Existentes:</h3>
+            <div id="existingFlavors">
+                <!-- Los sabores existentes se cargarán dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Sección de Recetas -->
+        <div id="recetas" class="section">
+            <h2>📝 Recetas de Congeladas</h2>
+            
+            <button class="export-btn" onclick="exportRecipes()">📤 Exportar Recetas (CSV)</button>
+            
+            <div class="recipe-form">
+                <h3>Agregar Nueva Receta</h3>
+                
+                <div class="form-group">
+                    <label for="recipeName">Nombre de la congelada:</label>
+                    <input type="text" id="recipeName" placeholder="Ej: Boli de Fresa Premium">
+                </div>
+
+                <div class="ingredients-section">
+                    <h4>Ingredientes:</h4>
+                    <div id="ingredientsList">
+                        <div class="ingredient-item">
+                            <input type="text" placeholder="Nombre del ingrediente" class="ingredient-name">
+                            <input type="number" placeholder="Cantidad" step="0.01" class="ingredient-quantity">
+                            <input type="text" placeholder="Unidad (kg, L, pzas)" class="ingredient-unit">
+                            <input type="number" placeholder="Costo unitario" step="0.01" class="ingredient-cost">
+                            <button type="button" onclick="removeIngredient(this)">Eliminar</button>
+                        </div>
+                    </div>
+                    <button type="button" class="add-ingredient-btn" onclick="addIngredient()">+ Agregar Ingrediente</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Costo total calculado: <span id="calculatedCost">$0.00</span></label>
+                </div>
+
+                <button class="action-btn success" onclick="saveRecipe()">Guardar Receta</button>
+                <button class="action-btn" onclick="clearRecipeForm()">Limpiar Formulario</button>
+            </div>
+
+            <div class="recipes-list" id="recipesList">
+                <!-- Las recetas se cargarán dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase App (core) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <!-- Firestore (base de datos en la nube) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVHL7bMLSL463bFp3Z82jQ2Apx-14p5DQ",
+            authDomain: "bolis-da6ee.firebaseapp.com",
+            projectId: "bolis-da6ee",
+            storageBucket: "bolis-da6ee.firebasestorage.app",
+            messagingSenderId: "1086747739097",
+            appId: "1:1086747739097:web:df462cf317f523ec61cfc8",
+            measurementId: "G-BCBR5CW214"
+        };
+
+        // Inicializa Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Estado de la aplicación
+        let appState = {
+            flavors: [
+                { name: "Fresa", price: 15, cost: 8 },
+                { name: "Limón", price: 15, cost: 8 },
+                { name: "Mango", price: 18, cost: 10 },
+                { name: "Coco", price: 20, cost: 12 }
+            ],
+            currentSale: {
+                items: [],
+                total: 0
+            },
+            sales: [],
+            stock: {},
+            costs: {},
+            recipes: []
+        };
+
+        let currentQuantity = 1;
+        let selectedFlavor = null;
+        let editingRecipeId = null;
+
+        // Función para generar ID con fecha
+        function generateRecipeId() {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString() + 
+                           (now.getMonth() + 1).toString().padStart(2, '0') + 
+                           now.getDate().toString().padStart(2, '0');
+            const timeStr = now.getTime().toString();
+            return dateStr + '_' + timeStr;
+        }
+
+        // Funciones de Firebase
+        function saveData() {
+            db.collection("appData").doc("main").set(appState)
+              .then(() => {
+                localStorage.setItem("congeladasApp", JSON.stringify(appState)); // respaldo local
+                console.log("Datos guardados en la nube");
+              })
+              .catch((error) => {
+                console.error("Error guardando en la nube:", error);
+                localStorage.setItem("congeladasApp", JSON.stringify(appState)); // respaldo local
+              });
+        }
+
+        function loadData() {
+            db.collection("appData").doc("main").get().then((doc) => {
+                if (doc.exists) {
+                    appState = doc.data();
+                    localStorage.setItem("congeladasApp", JSON.stringify(appState)); // respaldo local
+                    console.log("Datos cargados desde la nube");
+                } else {
+                    // Si no hay datos en la nube, usa localStorage
+                    const savedData = localStorage.getItem("congeladasApp");
+                    if (savedData) {
+                        appState = JSON.parse(savedData);
+                        console.log("Datos cargados desde localStorage");
+                    }
+                }
+                
+                // Inicializar datos faltantes
+                appState.flavors.forEach((flavor) => {
+                    if (!appState.stock[flavor.name]) appState.stock[flavor.name] = 50;
+                    if (!appState.costs[flavor.name]) appState.costs[flavor.name] = flavor.cost;
+                });
+
+                if (!appState.recipes) appState.recipes = [];
+
+                // Actualizar la interfaz
+                updateFlavorGrid();
+                updateReports();
+                updateStock();
+                updateProfits();
+                updateExistingFlavors();
+                updateRecipesList();
+                
+            }).catch((error) => {
+                console.error("Error cargando desde la nube:", error);
+                // Fallback a localStorage
+                const savedData = localStorage.getItem("congeladasApp");
+                if (savedData) {
+                    appState = JSON.parse(savedData);
+                }
+                
+                // Inicializar datos faltantes
+                appState.flavors.forEach((flavor) => {
+                    if (!appState.stock[flavor.name]) appState.stock[flavor.name] = 50;
+                    if (!appState.costs[flavor.name]) appState.costs[flavor.name] = flavor.cost;
+                });
+
+                if (!appState.recipes) appState.recipes = [];
+
+                // Actualizar la interfaz
+                updateFlavorGrid();
+                updateReports();
+                updateStock();
+                updateProfits();
+                updateExistingFlavors();
+                updateRecipesList();
+            });
+        }
+
+        // Funciones de navegación
+        function showSection(sectionName) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remover clase active de todos los botones
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar la sección seleccionada
+            document.getElementById(sectionName).classList.add('active');
+            
+            // Activar el botón correspondiente
+            event.target.classList.add('active');
+        }
+
+        // Funciones de ventas
+        function updateFlavorGrid() {
+            const grid = document.getElementById('flavorGrid');
+            grid.innerHTML = '';
+            
+            appState.flavors.forEach(flavor => {
+                const card = document.createElement('div');
+                card.className = 'flavor-card';
+                card.onclick = () => selectFlavor(flavor);
+                
+                card.innerHTML = `
+                    <div class="flavor-name">${flavor.name}</div>
+                    <div class="flavor-price">$${flavor.price}</div>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                        Stock: ${appState.stock[flavor.name] || 0}
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function selectFlavor(flavor) {
+            selectedFlavor = flavor;
+            
+            // Actualizar visualización
+            document.querySelectorAll('.flavor-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            event.target.closest('.flavor-card').classList.add('selected');
+            updateTotal();
+        }
+
+        function changeQuantity(delta) {
+            currentQuantity = Math.max(1, currentQuantity + delta);
+            document.getElementById('quantity').textContent = currentQuantity;
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const total = selectedFlavor ? selectedFlavor.price * currentQuantity : 0;
+            document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
+        }
+
+        function completeSale() {
+            if (!selectedFlavor) {
+                alert('Por favor selecciona un sabor');
+                return;
+            }
+
+            if (appState.stock[selectedFlavor.name] < currentQuantity) {
+                alert('No hay suficiente stock');
+                return;
+            }
+
+            const sale = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                flavor: selectedFlavor.name,
+                quantity: currentQuantity,
+                unitPrice: selectedFlavor.price,
+                total: selectedFlavor.price * currentQuantity,
+                cost: appState.costs[selectedFlavor.name] * currentQuantity,
+                profit: (selectedFlavor.price - appState.costs[selectedFlavor.name]) * currentQuantity
+            };
+
+            appState.sales.push(sale);
+            appState.stock[selectedFlavor.name] -= currentQuantity;
+
+            saveData();
+            clearSale();
+            updateReports();
+            updateStock();
+            updateProfits();
+            updateFlavorGrid();
+
+            alert('¡Venta completada!');
+        }
+
+        function clearSale() {
+            selectedFlavor = null;
+            currentQuantity = 1;
+            document.getElementById('quantity').textContent = '1';
+            document.getElementById('totalAmount').textContent = '$0.00';
+            
+            document.querySelectorAll('.flavor-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+
+        // Funciones de reportes
+        function updateReports() {
+            const salesList = document.getElementById('salesList');
+            const reportDate = document.getElementById('reportDate').value;
+            
+            let filteredSales = appState.sales;
+            if (reportDate) {
+                filteredSales = appState.sales.filter(sale => 
+                    sale.date.startsWith(reportDate)
+                );
+            }
+
+            salesList.innerHTML = '';
+            let totalDay = 0;
+
+            filteredSales.reverse().forEach(sale => {
+                const saleDiv = document.createElement('div');
+                saleDiv.className = 'sale-item';
+                
+                const saleDate = new Date(sale.date);
+                saleDiv.innerHTML = `
+                    <strong>${sale.flavor}</strong> - Cantidad: ${sale.quantity}<br>
+                    <small>${saleDate.toLocaleString()}</small><br>
+                    <strong>Total: $${sale.total.toFixed(2)}</strong>
+                `;
+                
+                salesList.appendChild(saleDiv);
+                totalDay += sale.total;
+            });
+
+            document.getElementById('reportTotal').textContent = `Total: $${totalDay.toFixed(2)}`;
+        }
+
+        function filterReports() {
+            updateReports();
+        }
+
+        // Funciones de inventario
+        function updateStock() {
+            const stockList = document.getElementById('stockList');
+            stockList.innerHTML = '';
+
+            appState.flavors.forEach(flavor => {
+                const stockDiv = document.createElement('div');
+                stockDiv.className = 'stock-item';
+                
+                stockDiv.innerHTML = `
+                    <div>
+                        <strong>${flavor.name}</strong><br>
+                        <small>Stock actual: ${appState.stock[flavor.name] || 0}</small>
+                    </div>
+                    <div class="stock-controls">
+                        <input type="number" class="stock-input" value="${appState.stock[flavor.name] || 0}" 
+                               onchange="updateFlavorStock('${flavor.name}', this.value)">
+                        <button class="action-btn" onclick="addStock('${flavor.name}', 10)">+10</button>
+                        <button class="action-btn" onclick="addStock('${flavor.name}', -10)">-10</button>
+                    </div>
+                `;
+                
+                stockList.appendChild(stockDiv);
+            });
+        }
+
+        function updateFlavorStock(flavorName, newStock) {
+            appState.stock[flavorName] = parseInt(newStock) || 0;
+            saveData();
+            updateFlavorGrid();
+        }
+
+        function addStock(flavorName, amount) {
+            appState.stock[flavorName] = (appState.stock[flavorName] || 0) + amount;
+            if (appState.stock[flavorName] < 0) appState.stock[flavorName] = 0;
+            
+            saveData();
+            updateStock();
+            updateFlavorGrid();
+        }
+
+        // Funciones de ganancias
+        function updateProfits() {
+            const profitList = document.getElementById('profitList');
+            profitList.innerHTML = '';
+
+            const profitByFlavor = {};
+            let totalProfit = 0;
+
+            appState.sales.forEach(sale => {
+                if (!profitByFlavor[sale.flavor]) {
+                    profitByFlavor[sale.flavor] = {
+                        totalSales: 0,
+                        totalProfit: 0,
+                        quantity: 0
+                    };
+                }
+                
+                profitByFlavor[sale.flavor].totalSales += sale.total;
+                profitByFlavor[sale.flavor].totalProfit += sale.profit;
+                profitByFlavor[sale.flavor].quantity += sale.quantity;
+                totalProfit += sale.profit;
+            });
+
+            Object.keys(profitByFlavor).forEach(flavor => {
+                const profit = profitByFlavor[flavor];
+                const profitDiv = document.createElement('div');
+                profitDiv.className = 'sale-item';
+                
+                profitDiv.innerHTML = `
+                    <strong>${flavor}</strong><br>
+                    Vendidos: ${profit.quantity} | Ventas: $${profit.totalSales.toFixed(2)}<br>
+                    <strong style="color: #4CAF50;">Ganancia: $${profit.totalProfit.toFixed(2)}</strong>
+                `;
+                
+                profitList.appendChild(profitDiv);
+            });
+
+            document.getElementById('totalProfit').textContent = `Ganancia total: $${totalProfit.toFixed(2)}`;
+        }
+
+        // Funciones de configuración
+        function addFlavor() {
+            const name = document.getElementById('newFlavorName').value.trim();
+            const price = parseFloat(document.getElementById('newFlavorPrice').value);
+            const cost = parseFloat(document.getElementById('newFlavorCost').value);
+
+            if (!name || !price || !cost) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+
+            if (appState.flavors.find(f => f.name === name)) {
+                alert('Este sabor ya existe');
+                return;
+            }
+
+            appState.flavors.push({ name, price, cost });
+            appState.stock[name] = 50; // Stock inicial
+            appState.costs[name] = cost;
+
+            saveData();
+            updateFlavorGrid();
+            updateStock();
+            updateExistingFlavors();
+
+            // Limpiar formulario
+            document.getElementById('newFlavorName').value = '';
+            document.getElementById('newFlavorPrice').value = '';
+            document.getElementById('newFlavorCost').value = '';
+
+            alert('Sabor agregado exitosamente');
+        }
+
+        function updateExistingFlavors() {
+            const container = document.getElementById('existingFlavors');
+            container.innerHTML = '';
+
+            appState.flavors.forEach((flavor, index) => {
+                const flavorDiv = document.createElement('div');
+                flavorDiv.className = 'sale-item';
+                
+                flavorDiv.innerHTML = `
+                    <strong>${flavor.name}</strong> - Precio: $${flavor.price} - Costo: $${flavor.cost}<br>
+                    <button class="action-btn" onclick="removeFlavor(${index})" style="margin-top: 10px;">
+                        Eliminar
+                    </button>
+                `;
+                
+                container.appendChild(flavorDiv);
+            });
+        }
+
+        function removeFlavor(index) {
+            if (confirm('¿Estás seguro de eliminar este sabor?')) {
+                const flavorName = appState.flavors[index].name;
+                appState.flavors.splice(index, 1);
+                delete appState.stock[flavorName];
+                delete appState.costs[flavorName];
+
+                saveData();
+                updateFlavorGrid();
+                updateStock();
+                updateExistingFlavors();
+            }
+        }
+
+        // Funciones de recetas
+        function addIngredient() {
+            const ingredientsList = document.getElementById('ingredientsList');
+            const newIngredient = document.createElement('div');
+            newIngredient.className = 'ingredient-item';
+            
+            newIngredient.innerHTML = `
+                <input type="text" placeholder="Nombre del ingrediente" class="ingredient-name">
+                <input type="number" placeholder="Cantidad" step="0.01" class="ingredient-quantity">
+                <input type="text" placeholder="Unidad (kg, L, pzas)" class="ingredient-unit">
+                <input type="number" placeholder="Costo unitario" step="0.01" class="ingredient-cost">
+                <button type="button" onclick="removeIngredient(this)">Eliminar</button>
+            `;
+            
+            ingredientsList.appendChild(newIngredient);
+            
+            // Agregar event listeners para cálculo automático
+            const inputs = newIngredient.querySelectorAll('input[type="number"]');
+            inputs.forEach(input => {
+                input.addEventListener('input', calculateTotalCost);
+            });
+        }
+
+        function removeIngredient(button) {
+            button.parentElement.remove();
+            calculateTotalCost();
+        }
+
+        function calculateTotalCost() {
+            const ingredientItems = document.querySelectorAll('.ingredient-item');
+            let totalCost = 0;
+            
+            ingredientItems.forEach(item => {
+                const quantity = parseFloat(item.querySelector('.ingredient-quantity').value) || 0;
+                const cost = parseFloat(item.querySelector('.ingredient-cost').value) || 0;
+                totalCost += quantity * cost;
+            });
+            
+            document.getElementById('calculatedCost').textContent = `$${totalCost.toFixed(2)}`;
+        }
+
+        function saveRecipe() {
+            const recipeName = document.getElementById('recipeName').value.trim();
+            
+            if (!recipeName) {
+                alert('Por favor ingresa el nombre de la congelada');
+                return;
+            }
+
+            const ingredientItems = document.querySelectorAll('.ingredient-item');
+            const ingredients = [];
+            let totalCost = 0;
+
+            ingredientItems.forEach(item => {
+                const name = item.querySelector('.ingredient-name').value.trim();
+                const quantity = parseFloat(item.querySelector('.ingredient-quantity').value) || 0;
+                const unit = item.querySelector('.ingredient-unit').value.trim();
+                const cost = parseFloat(item.querySelector('.ingredient-cost').value) || 0;
+                
+                if (name && quantity > 0) {
+                    const ingredientCost = quantity * cost;
+                    ingredients.push({
+                        name,
+                        quantity,
+                        unit,
+                        unitCost: cost,
+                        totalCost: ingredientCost
+                    });
+                    totalCost += ingredientCost;
+                }
+            });
+
+            if (ingredients.length === 0) {
+                alert('Por favor agrega al menos un ingrediente');
+                return;
+            }
+
+            const recipe = {
+                id: editingRecipeId || generateRecipeId(),
+                name: recipeName,
+                ingredients: ingredients,
+                totalCost: totalCost,
+                createdAt: editingRecipeId ? 
+                    appState.recipes.find(r => r.id === editingRecipeId).createdAt : 
+                    new Date().toISOString()
+            };
+
+            if (editingRecipeId) {
+                const index = appState.recipes.findIndex(r => r.id === editingRecipeId);
+                appState.recipes[index] = recipe;
+                editingRecipeId = null;
+            } else {
+                appState.recipes.push(recipe);
+            }
+
+            saveData();
+            updateRecipesList();
+            clearRecipeForm();
+            alert('Receta guardada exitosamente');
+        }
+
+        function clearRecipeForm() {
+            document.getElementById('recipeName').value = '';
+            document.getElementById('ingredientsList').innerHTML = `
+                <div class="ingredient-item">
+                    <input type="text" placeholder="Nombre del ingrediente" class="ingredient-name">
+                    <input type="number" placeholder="Cantidad" step="0.01" class="ingredient-quantity">
+                    <input type="text" placeholder="Unidad (kg, L, pzas)" class="ingredient-unit">
+                    <input type="number" placeholder="Costo unitario" step="0.01" class="ingredient-cost">
+                    <button type="button" onclick="removeIngredient(this)">Eliminar</button>
+                </div>
+            `;
+            document.getElementById('calculatedCost').textContent = '$0.00';
+            editingRecipeId = null;
+            
+            // Agregar event listeners para cálculo automático
+            const inputs = document.querySelectorAll('#ingredientsList input[type="number"]');
+            inputs.forEach(input => {
+                input.addEventListener('input', calculateTotalCost);
+            });
+        }
+
+        function updateRecipesList() {
+            const recipesList = document.getElementById('recipesList');
+            recipesList.innerHTML = '';
+
+            if (appState.recipes.length === 0) {
+                recipesList.innerHTML = '<p>No hay recetas guardadas.</p>';
+                return;
+            }
+
+            appState.recipes.forEach(recipe => {
+                const recipeDiv = document.createElement('div');
+                recipeDiv.className = 'recipe-item';
+                
+                let ingredientsHtml = '';
+                recipe.ingredients.forEach(ingredient => {
+                    ingredientsHtml += `
+                        <div class="recipe-ingredient">
+                            <span>${ingredient.name} - ${ingredient.quantity} ${ingredient.unit}</span>
+                            <span>$${ingredient.totalCost.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+
+                const createdDate = new Date(recipe.createdAt).toLocaleDateString();
+                
+                recipeDiv.innerHTML = `
+                    <div class="recipe-header">
+                        <span class="recipe-name">${recipe.name}</span>
+                        <span class="recipe-cost">$${recipe.totalCost.toFixed(2)}</span>
+                    </div>
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+                        ID: ${recipe.id} | Creada: ${createdDate}
+                    </div>
+                    <div class="recipe-ingredients">
+                        <strong>Ingredientes:</strong>
+                        ${ingredientsHtml}
+                    </div>
+                    <div class="recipe-actions">
+                        <button class="edit-btn" onclick="editRecipe('${recipe.id}')">Editar</button>
+                        <button class="delete-btn" onclick="deleteRecipe('${recipe.id}')">Eliminar</button>
+                    </div>
+                `;
+                
+                recipesList.appendChild(recipeDiv);
+            });
+        }
+
+        function editRecipe(recipeId) {
+            const recipe = appState.recipes.find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            editingRecipeId = recipeId;
+            
+            // Llenar el formulario con los datos de la receta
+            document.getElementById('recipeName').value = recipe.name;
+            
+            // Limpiar ingredientes actuales
+            document.getElementById('ingredientsList').innerHTML = '';
+            
+            // Agregar ingredientes de la receta
+            recipe.ingredients.forEach(ingredient => {
+                const ingredientDiv = document.createElement('div');
+                ingredientDiv.className = 'ingredient-item';
+                
+                ingredientDiv.innerHTML = `
+                    <input type="text" placeholder="Nombre del ingrediente" class="ingredient-name" value="${ingredient.name}">
+                    <input type="number" placeholder="Cantidad" step="0.01" class="ingredient-quantity" value="${ingredient.quantity}">
+                    <input type="text" placeholder="Unidad (kg, L, pzas)" class="ingredient-unit" value="${ingredient.unit}">
+                    <input type="number" placeholder="Costo unitario" step="0.01" class="ingredient-cost" value="${ingredient.unitCost}">
+                    <button type="button" onclick="removeIngredient(this)">Eliminar</button>
+                `;
+                
+                document.getElementById('ingredientsList').appendChild(ingredientDiv);
+                
+                // Agregar event listeners para cálculo automático
+                const inputs = ingredientDiv.querySelectorAll('input[type="number"]');
+                inputs.forEach(input => {
+                    input.addEventListener('input', calculateTotalCost);
+                });
+            });
+            
+            calculateTotalCost();
+            
+            // Cambiar a la sección de recetas si no está activa
+            showSection('recetas');
+            
+            alert('Receta cargada para edición');
+        }
+
+        function deleteRecipe(recipeId) {
+            if (confirm('¿Estás seguro de eliminar esta receta?')) {
+                appState.recipes = appState.recipes.filter(r => r.id !== recipeId);
+                saveData();
+                updateRecipesList();
+            }
+        }
+
+        function exportRecipes() {
+            if (appState.recipes.length === 0) {
+                alert('No hay recetas para exportar');
+                return;
+            }
+
+            let csvContent = "Nombre,ID,Fecha Creación,Costo Total,Ingredientes\\n";
+            
+            appState.recipes.forEach(recipe => {
+                const ingredientsList = recipe.ingredients.map(ing => 
+                    `${ing.name} (${ing.quantity} ${ing.unit} - $${ing.totalCost.toFixed(2)})`
+                ).join('; ');
+                
+                const createdDate = new Date(recipe.createdAt).toLocaleDateString();
+                
+                csvContent += `"${recipe.name}","${recipe.id}","${createdDate}","$${recipe.totalCost.toFixed(2)}","${ingredientsList}"\\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `recetas_congeladas_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Event listeners para cálculo automático en el primer ingrediente
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('#ingredientsList input[type="number"]');
+            inputs.forEach(input => {
+                input.addEventListener('input', calculateTotalCost);
+            });
+        });
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            
+            // Configurar fecha de hoy por defecto en reportes
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('reportDate').value = today;
+        });
+
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registrado exitosamente');
+                    })
+                    .catch(function(error) {
+                        console.log('ServiceWorker falló al registrarse');
+                    });
+            });
+        }
+    </script>
+</body>
+</html>'''
+
+# Guardar el archivo
+with open('bolis_kefir_firebase.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("✅ Archivo 'bolis_kefir_firebase.html' creado exitosamente con Firebase integrado!")
