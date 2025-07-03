@@ -6,10 +6,7 @@
     <title>Congeladas - Punto de Venta</title>
     <link rel="icon" type="image/png" href="mascota.png" />
     <link rel="apple-touch-icon" href="mascota.png" />
-    <link
-        rel="manifest"
-        href="data:application/json;base64,eyJuYW1lIjoiQ29uZ2VsYWRhcyBQT1MiLCJzaG9ydF9uYW1lIjoiQ29uZ2VsYWRhcyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwidGhlbWVfY29sb3IiOiIjNDI5MmU0IiwiYmFja2dyb3VuZF9jb2xvciI6IiNmZmZmZmYiLCJzdGFydF91cmwiOiIvIiwiaWNvbnMiOlt7InNyYyI6Im1hc2NvdGEucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0="
-    />
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQ29uZ2VsYWRhcyBQT1MiLCJzaG9ydF9uYW1lIjoiQ29uZ2VsYWRhcyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwidGhlbWVfY29sb3IiOiIjNDI5MmU0IiwiYmFja2dyb3VuZF9jb2xvciI6IiNmZmZmZmYiLCJzdGFydF91cmwiOiIvIiwiaWNvbnMiOlt7InNyYyI6Im1hc2NvdGEucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0=" />
     <meta name="theme-color" content="#4292e4" />
     <style>
         /* Tu CSS original sin cambios */
@@ -540,32 +537,42 @@
             </div>
 
             <!-- Sección de Reportes -->
-            <div id="reportes" class="section">
-                <div class="report-filters">
-                    <button class="filter-btn active" onclick="filterReport('today', event)">Hoy</button>
-                    <button class="filter-btn" onclick="filterReport('week', event)">Semana</button>
-                    <button class="filter-btn" onclick="filterReport('month', event)">Mes</button>
-                    <button class="filter-btn" onclick="filterReport('all', event)">Todo</button>
-                </div>
+<div id="reportes" class="section">
+    <div class="report-filters">
+        <button class="filter-btn active" onclick="filterReport('today', event)">Hoy</button>
+        <button class="filter-btn" onclick="filterReport('week', event)">Semana</button>
+        <button class="filter-btn" onclick="filterReport('month', event)">Mes</button>
+        <button class="filter-btn" onclick="filterReport('all', event)">Todo</button>
+    </div>
 
-                <div class="stats-card">
-                    <div class="stats-label">Ventas totales</div>
-                    <div class="stats-value" id="totalSales">0</div>
-                </div>
+    <div class="input-group">
+        <label>Fecha de inicio:</label>
+        <input type="date" id="startDate" />
+    </div>
+    <div class="input-group">
+        <label>Fecha de fin:</label>
+        <input type="date" id="endDate" />
+    </div>
+    <button class="btn-secondary" onclick="filterCustomReport()">Filtrar Personalizado</button>
 
-                <div class="stats-card">
-                    <div class="stats-label">Ingresos totales</div>
-                    <div class="stats-value" id="totalRevenue">$0</div>
-                </div>
+    <div class="stats-card">
+        <div class="stats-label">Ventas totales</div>
+        <div class="stats-value" id="totalSales">0</div>
+    </div>
 
-                <h3 style="margin: 1rem 0; color: #1976d2;">Sabores más vendidos:</h3>
-                <div id="topFlavors"></div>
+    <div class="stats-card">
+        <div class="stats-label">Ingresos totales</div>
+        <div class="stats-value" id="totalRevenue">$0</div>
+    </div>
 
-                <h3 style="margin: 1rem 0; color: #1976d2;">Historial de ventas:</h3>
-                <div id="salesHistory" class="sales-list"></div>
+    <h3 style="margin: 1rem 0; color: #1976d2;">Sabores más vendidos:</h3>
+    <div id="topFlavors"></div>
 
-                <button class="btn-primary" onclick="exportReport()">📥 Exportar Reporte</button>
-            </div>
+    <h3 style="margin: 1rem 0; color: #1976d2;">Historial de ventas:</h3>
+    <div id="salesHistory" class="sales-list"></div>
+
+    <button class="btn-primary" onclick="exportReport()">📥 Exportar Reporte</button>
+</div>  
 
             <!-- Sección de Stock -->
             <div id="stock" class="section">
@@ -740,9 +747,18 @@
             stock: {},
             costs: {},
             currentFilter: "today",
-            recipes: [], // nuevo array para recetas
-            editingRecipeId: null, // para edición de receta
+            recipes: [],
+            editingRecipeId: null,
         };
+
+        // Obtener fecha local en formato YYYY-MM-DD
+        function getLocalDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
 
         // Inicializar la app
         function initApp() {
@@ -753,8 +769,8 @@
             updateReports();
             renderPremiumList();
             updateGains();
-            renderRecipes(); // renderizar recetas
-            assignRecipeInputEvents(); // asignar eventos para cálculo automático
+            renderRecipes();
+            assignRecipeInputEvents();
         }
 
         // Cargar datos del localStorage
@@ -762,19 +778,6 @@
             const savedData = localStorage.getItem("congeladasApp");
             if (savedData) {
                 const parsed = JSON.parse(savedData);
-                if (Array.isArray(parsed.flavors) && parsed.flavors.length > 0) {
-                    if (typeof parsed.flavors[0] === "string") {
-                        appState.flavors = parsed.flavors.map((f) => ({
-                            name: f,
-                            premium: false,
-                        }));
-                    } else {
-                        appState.flavors = parsed.flavors;
-                    }
-                }
-                if (Array.isArray(parsed.recipes)) {
-                    appState.recipes = parsed.recipes;
-                }
                 appState = { ...appState, ...parsed };
             }
 
@@ -795,7 +798,7 @@
 
         // Establecer fecha por defecto
         function setDefaultDate() {
-            const today = new Date().toISOString().split("T")[0];
+            const today = getLocalDateString();
             document.getElementById("saleDate").value = today;
         }
 
@@ -873,28 +876,10 @@
             cartItems.innerHTML = "";
 
             let total = 0;
-            let totalQuantity = 0;
 
-            // Calcular la cantidad total de congeladas en el carrito
-            Object.values(appState.cart).forEach(qty => {
-                totalQuantity += qty;
-            });
-
-            // Determinar el precio base según la cantidad total
-            let normalPrice = 30;
-            let premiumPrice = 30;
-
-            if (totalQuantity >= 2 && totalQuantity <= 9) {
-                normalPrice = 25;
-            } else if (totalQuantity >= 10) {
-                normalPrice = 23;
-                premiumPrice = 25;
-            }
-
-            // Calcular el subtotal para cada sabor y actualizar el total
             Object.entries(appState.cart).forEach(([flavorName, qty]) => {
                 const flavorObj = appState.flavors.find((f) => f.name === flavorName);
-                const price = flavorObj.premium ? premiumPrice : normalPrice;
+                const price = flavorObj.premium ? 30 : 25; // Precio base
                 const subtotal = price * qty;
                 total += subtotal;
 
@@ -921,47 +906,15 @@
             const clientName = document.getElementById("clientName").value.trim() || "Cliente no especificado";
             const paymentType = document.getElementById("paymentType").value;
 
-            // Verificar stock
-            for (const [flavorName, qty] of Object.entries(appState.cart)) {
-                if (appState.stock[flavorName] < qty) {
-                    showToast(`Stock insuficiente de ${flavorName}`);
-                    return;
-                }
-            }
-
             let total = 0;
-            let totalQuantity = 0;
 
-            // Calcular la cantidad total de congeladas en el carrito
-            Object.values(appState.cart).forEach(qty => {
-                totalQuantity += qty;
-            });
-
-            // Determinar el precio base según la cantidad total
-            let normalPrice = 30;
-            let premiumPrice = 30;
-
-            if (totalQuantity >= 2 && totalQuantity <= 9) {
-                normalPrice = 25;
-            } else if (totalQuantity >= 10) {
-                normalPrice = 23;
-                premiumPrice = 25;
-            }
-
-            // Calcular el subtotal para cada sabor y actualizar el total
             Object.entries(appState.cart).forEach(([flavorName, qty]) => {
                 const flavorObj = appState.flavors.find((f) => f.name === flavorName);
-                const price = flavorObj.premium ? premiumPrice : normalPrice;
+                const price = flavorObj.premium ? 30 : 25; // Precio base
                 const subtotal = price * qty;
                 total += subtotal;
-
-                // Actualizar stock solo si no es deuda
-                if (paymentType !== "Debe") {
-                    appState.stock[flavorName] -= qty;
-                }
             });
 
-            // Registrar venta
             const sale = {
                 id: Date.now(),
                 date: saleDate,
@@ -969,8 +922,6 @@
                 paymentType: paymentType,
                 items: { ...appState.cart },
                 total: total,
-                timestamp: new Date().toISOString(),
-                paid: paymentType !== "Debe", // true si no es deuda, false si es deuda
             };
 
             appState.sales.push(sale);
@@ -997,8 +948,7 @@
 
         // Actualizar reportes
         function updateReports() {
-            const now = new Date();
-            const today = now.toISOString().split("T")[0];
+            const today = getLocalDateString();
 
             let filteredSales = appState.sales;
 
@@ -1007,21 +957,26 @@
                     filteredSales = appState.sales.filter((sale) => sale.date === today);
                     break;
                 case "week":
-                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    filteredSales = appState.sales.filter((sale) => new Date(sale.date) >= weekAgo);
+                    const weekStart = getWeekStart();
+                    filteredSales = appState.sales.filter((sale) => {
+                        const saleDate = new Date(sale.date);
+                        return saleDate >= weekStart;
+                    });
                     break;
                 case "month":
-                    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    filteredSales = appState.sales.filter((sale) => new Date(sale.date) >= monthAgo);
+                    const now = new Date();
+                    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                    filteredSales = appState.sales.filter((sale) => {
+                        const saleDate = new Date(sale.date);
+                        return saleDate >= monthStart;
+                    });
                     break;
             }
 
-            // Actualizar estadísticas
             document.getElementById("totalSales").textContent = filteredSales.length;
             const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
             document.getElementById("totalRevenue").textContent = `$${totalRevenue}`;
 
-            // Top sabores
             const flavorCounts = {};
             filteredSales.forEach((sale) => {
                 Object.entries(sale.items).forEach(([flavorName, qty]) => {
@@ -1051,11 +1006,10 @@
                 });
             }
 
-            // Historial de ventas
             renderSalesHistory(filteredSales);
         }
 
-        // Renderizar historial de ventas con botón Editar
+        // Renderizar historial de ventas
         function renderSalesHistory(sales) {
             const historyDiv = document.getElementById("salesHistory");
             historyDiv.innerHTML = "";
@@ -1075,23 +1029,17 @@
                     const itemsList = Object.entries(sale.items)
                         .map(([flavorName, qty]) => {
                             const flavorObj = appState.flavors.find((f) => f.name === flavorName);
-                            return `${capitalize(flavorName)}${flavorObj && flavorObj.premium ? " ⭐" : ""} x${qty}`;
+                            return `${flavorName} x${qty}`;
                         })
                         .join(", ");
 
-                    let paymentLabel = `<strong>Pago:</strong> ${sale.paymentType}`;
-                    if (!sale.paid) {
-                        paymentLabel += ` <button style="margin-left:10px; background:#27ae60; color:white; border:none; border-radius:5px; padding:0.2em 0.5em; cursor:pointer;" onclick="settleDebt(${sale.id})">Saldar deuda</button>`;
-                    }
-
                     saleDiv.innerHTML = `
-                    <div class="sale-date">${formatDate(sale.date)}</div>
+                    <div class="sale-date">${sale.date}</div>
                     <div><strong>Cliente:</strong> ${sale.client}</div>
                     <div>${itemsList}</div>
                     <div style="font-weight: bold; color: #4292e4;">Total: $${sale.total}</div>
-                    <div>${paymentLabel}</div>
                     <button class="delete-sale" onclick="deleteSale(${sale.id})">×</button>
-                    <button class="edit-sale" onclick="editSale(${sale.id})" title="Editar venta">✎</button>
+                    <button class="edit-sale" onclick="editSale(${sale.id})">✎</button>
                 `;
                     historyDiv.appendChild(saleDiv);
                 });
@@ -1099,19 +1047,8 @@
 
         // Eliminar venta
         function deleteSale(saleId) {
-            if (!confirm("¿Estás seguro de eliminar esta venta?")) return;
-
             const saleIndex = appState.sales.findIndex((s) => s.id === saleId);
             if (saleIndex !== -1) {
-                const sale = appState.sales[saleIndex];
-
-                // Restaurar stock solo si la venta estaba pagada
-                if (sale.paid) {
-                    Object.entries(sale.items).forEach(([flavorName, qty]) => {
-                        appState.stock[flavorName] += qty;
-                    });
-                }
-
                 appState.sales.splice(saleIndex, 1);
                 saveData();
                 updateReports();
@@ -1120,36 +1057,10 @@
             }
         }
 
-        // Saldar deuda
-        function settleDebt(saleId) {
-            const sale = appState.sales.find((s) => s.id === saleId);
-            if (!sale) return;
-
-            if (!confirm(`¿Confirmas que el cliente "${sale.client}" ha pagado la deuda de $${sale.total}?`)) return;
-
-            sale.paid = true;
-            sale.paymentType = "Pagado";
-
-            // Al saldar deuda, descontar stock si no se descontó antes
-            Object.entries(sale.items).forEach(([flavorName, qty]) => {
-                if (appState.stock[flavorName] >= 0) {
-                    appState.stock[flavorName] = Math.max(0, appState.stock[flavorName] - qty);
-                }
-            });
-
-            saveData();
-            updateReports();
-            renderStock();
-            showToast("Deuda saldada correctamente");
-        }
-
         // Función para editar venta
         function editSale(saleId) {
             const sale = appState.sales.find((s) => s.id === saleId);
-            if (!sale) {
-                showToast("Venta no encontrada");
-                return;
-            }
+            if (!sale) return;
 
             showEditModal(sale);
         }
@@ -1157,7 +1068,7 @@
         // Mostrar modal de edición
         function showEditModal(sale) {
             const modal = document.getElementById("editModal");
-            modal.dataset.saleId = sale.id; // Guardar id para guardar cambios
+            modal.dataset.saleId = sale.id;
 
             document.getElementById("editSaleDate").value = sale.date;
             document.getElementById("editClientName").value = sale.client;
@@ -1203,7 +1114,7 @@
                 sale.items[flavorName] = newQty;
             }
 
-            showEditModal(sale); // Actualizar modal para reflejar cambios
+            showEditModal(sale);
         }
 
         // Guardar cambios de venta editada
@@ -1213,33 +1124,15 @@
             const sale = appState.sales.find((s) => s.id === saleId);
             if (!sale) return;
 
-            // Obtener valores del modal
             sale.date = document.getElementById("editSaleDate").value;
             sale.client = document.getElementById("editClientName").value.trim() || "Cliente no especificado";
             sale.paymentType = document.getElementById("editPaymentType").value;
 
-            // Recalcular total con lógica de precios y descuentos
-            let totalNormalQuantity = 0;
-            Object.entries(sale.items).forEach(([flavorName, qty]) => {
-                const flavorObj = appState.flavors.find((f) => f.name === flavorName);
-                if (flavorObj && !flavorObj.premium) {
-                    totalNormalQuantity += qty;
-                }
-            });
-
             let total = 0;
+
             Object.entries(sale.items).forEach(([flavorName, qty]) => {
                 const flavorObj = appState.flavors.find((f) => f.name === flavorName);
-                let price = 30;
-
-                if (!flavorObj.premium) {
-                    if (totalNormalQuantity >= 10) {
-                        price = 23;
-                    } else if (totalNormalQuantity >= 2 && totalNormalQuantity <= 9) {
-                        price = 25;
-                    }
-                }
-
+                const price = flavorObj.premium ? 30 : 25; // Precio base
                 total += price * qty;
             });
 
@@ -1251,28 +1144,15 @@
             showToast("Venta actualizada correctamente");
         }
 
-        // Actualizar ganancias semanales (siempre semana lunes-domingo)
+        // Actualizar ganancias semanales
         function updateGains() {
-            const now = new Date();
-
-            const day = now.getDay(); // 0 (domingo) a 6 (sábado)
-            const diffToMonday = (day === 0 ? 6 : day - 1);
-            const monday = new Date(now);
-            monday.setHours(0, 0, 0, 0);
-            monday.setDate(now.getDate() - diffToMonday);
-
+            const monday = getWeekStart();
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6);
             sunday.setHours(23, 59, 59, 999);
 
-            function parseDateLocal(dateStr) {
-                const parts = dateStr.split("-");
-                return new Date(parts[0], parts[1] - 1, parts[2]);
-            }
-
             const weeklySales = appState.sales.filter((sale) => {
-                if (!sale.paid) return false;
-                const saleDate = parseDateLocal(sale.date);
+                const saleDate = new Date(sale.date);
                 return saleDate >= monday && saleDate <= sunday;
             });
 
@@ -1407,7 +1287,7 @@
         // Exportar reporte
         function exportReport() {
             const reportData = {
-                fecha: new Date().toLocaleDateString(),
+                fecha: getLocalDateString(),
                 periodo: appState.currentFilter,
                 ventas: appState.sales,
                 resumen: {
@@ -1451,17 +1331,10 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `reporte_congeladas_${new Date().toISOString().split("T")[0]}.csv`;
+            a.download = `reporte_congeladas_${getLocalDateString()}.csv`;
             a.click();
 
             showToast("Reporte exportado exitosamente");
-        }
-
-        // Formatear fecha
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            const options = { year: "numeric", month: "long", day: "numeric" };
-            return date.toLocaleDateString("es-MX", options);
         }
 
         // Mostrar toast
@@ -1479,276 +1352,66 @@
         function capitalize(text) {
             return text.charAt(0).toUpperCase() + text.slice(1);
         }
+// Filtrar reportes personalizados
+function filterCustomReport() {
+    const startDate = new Date(document.getElementById("startDate").value);
+    const endDate = new Date(document.getElementById("endDate").value);
+    
+    if (isNaN(startDate) || isNaN(endDate)) {
+        showToast("Por favor, selecciona ambas fechas.");
+        return;
+    }
 
-        // --- MÓDULO DE RECETAS ---
+    if (startDate > endDate) {
+        showToast("La fecha de inicio no puede ser mayor que la fecha de fin.");
+        return;
+    }
 
-        // Generar ID con fecha + timestamp
-        function generateRecipeId() {
-            const now = new Date();
-            const dateString = now.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
-            const timeString = Date.now().toString(); // timestamp para unicidad
-            return dateString + timeString;
-        }
+    const filteredSales = appState.sales.filter((sale) => {
+        const saleDate = new Date(sale.date);
+        return saleDate >= startDate && saleDate <= endDate;
+    });
 
-        // Renderizar lista de recetas con eventos addEventListener
-        function renderRecipes() {
-            const list = document.getElementById("recipeList");
-            list.innerHTML = "";
+    // Actualizar estadísticas
+    document.getElementById("totalSales").textContent = filteredSales.length;
+    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+    document.getElementById("totalRevenue").textContent = `$${totalRevenue}`;
 
-            if (appState.recipes.length === 0) {
-                list.innerHTML = '<div class="empty-state"><p>No hay recetas guardadas</p></div>';
-                return;
-            }
+    // Top sabores
+    const flavorCounts = {};
+    filteredSales.forEach((sale) => {
+        Object.entries(sale.items).forEach(([flavorName, qty]) => {
+            flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + qty;
+        });
+    });
 
-            appState.recipes.forEach((recipe) => {
-                const div = document.createElement("div");
-                div.className = "stock-item";
-                div.style.justifyContent = "space-between";
+    const topFlavors = Object.entries(flavorCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
 
-                div.innerHTML = `
-                    <div>
-                        <strong>${recipe.name}</strong> (ID: ${recipe.id})<br/>
-                        Costo unitario: ${formatPrice(recipe.unitCost || 0)}<br/>
-                        Fruta: ${recipe.fruta.qty} (${formatPrice(recipe.fruta.price)})<br/>
-                        Kefir: ${recipe.kefir.qty} (${formatPrice(recipe.kefir.price)})<br/>
-                        Lechera: ${recipe.lechera.qty} (${formatPrice(recipe.lechera.price)})<br/>
-                        Saborizante: ${recipe.saborizante.qty} (${formatPrice(recipe.saborizante.price)})<br/>
-                        Bolsas: ${recipe.bolsas.qty} (${formatPrice(recipe.bolsas.price)})<br/>
-                        Trozos: ${recipe.trozos.qty} (${formatPrice(recipe.trozos.price)})
-                    </div>
-                    <div>
-                        <button class="btn-secondary btn-edit" style="margin-bottom: 0.5rem;">Editar</button><br/>
-                        <button class="btn-secondary btn-delete">Eliminar</button>
-                    </div>
-                `;
+    const topFlavorsDiv = document.getElementById("topFlavors");
+    topFlavorsDiv.innerHTML = "";
 
-                // Asignar eventos con addEventListener
-                const btnEdit = div.querySelector(".btn-edit");
-                btnEdit.addEventListener("click", () => editRecipe(recipe.id));
+    if (topFlavors.length === 0) {
+        topFlavorsDiv.innerHTML = '<div class="empty-state"><p>No hay datos disponibles</p></div>';
+    } else {
+        topFlavors.forEach(([flavorName, count]) => {
+            const item = document.createElement("div");
+            item.className = "stock-item";
+            const flavorObj = appState.flavors.find((f) => f.name === flavorName);
+            item.innerHTML = `
+                <span>${capitalize(flavorName)}${flavorObj && flavorObj.premium ? " ⭐" : ""}</span>
+                <span style="font-weight: bold; color: #4292e4;">${count} vendidas</span>
+            `;
+            topFlavorsDiv.appendChild(item);
+        });
+    }
 
-                const btnDelete = div.querySelector(".btn-delete");
-                btnDelete.addEventListener("click", () => deleteRecipe(recipe.id));
+    renderSalesHistory(filteredSales);
+}
 
-                list.appendChild(div);
-            });
-        }
 
-        // Guardar receta (nuevo o editar) con ID y costo unitario
-        function saveRecipe() {
-            // Calcular costo unitario antes de guardar
-            const frutaCost = (parseFloat(document.getElementById("recipeFrutaQty").value) || 0) * (parseFloat(document.getElementById("recipeFrutaPrice").value) || 0);
-            const kefirCost = (parseFloat(document.getElementById("recipeKefirQty").value) || 0) * (parseFloat(document.getElementById("recipeKefirPrice").value) || 0);
-            const lecheraCost = (parseInt(document.getElementById("recipeLecheraQty").value) || 0) * (parseFloat(document.getElementById("recipeLecheraPrice").value) || 0);
-            const saborizanteCost = (parseFloat(document.getElementById("recipeSaborizanteQty").value) || 0) * (parseFloat(document.getElementById("recipeSaborizantePrice").value) || 0);
-            const bolsasQty = parseInt(document.getElementById("recipeBolsasQty").value) || 0;
-            const bolsasCost = bolsasQty * (parseFloat(document.getElementById("recipeBolsasPrice").value) || 0);
-            const trozosCost = (parseInt(document.getElementById("recipeTrozosQty").value) || 0) * (parseFloat(document.getElementById("recipeTrozosPrice").value) || 0);
-
-            const totalCost = frutaCost + kefirCost + lecheraCost + saborizanteCost + bolsasCost + trozosCost;
-
-            let unitCost = 0;
-            if (bolsasQty > 0) {
-                unitCost = totalCost / bolsasQty;
-            }
-
-            const receta = {
-                id: appState.editingRecipeId || generateRecipeId(),
-                name: document.getElementById("recipeName").value.trim() || "Sin nombre",
-                fruta: {
-                    qty: parseFloat(document.getElementById("recipeFrutaQty").value) || 0,
-                    price: parseFloat(document.getElementById("recipeFrutaPrice").value) || 0,
-                },
-                kefir: {
-                    qty: parseFloat(document.getElementById("recipeKefirQty").value) || 0,
-                    price: parseFloat(document.getElementById("recipeKefirPrice").value) || 0,
-                },
-                lechera: {
-                    qty: parseInt(document.getElementById("recipeLecheraQty").value) || 0,
-                    price: parseFloat(document.getElementById("recipeLecheraPrice").value) || 0,
-                },
-                saborizante: {
-                    qty: parseFloat(document.getElementById("recipeSaborizanteQty").value) || 0,
-                    price: parseFloat(document.getElementById("recipeSaborizantePrice").value) || 0,
-                },
-                bolsas: {
-                    qty: bolsasQty,
-                    price: parseFloat(document.getElementById("recipeBolsasPrice").value) || 0,
-                },
-                trozos: {
-                    qty: parseInt(document.getElementById("recipeTrozosQty").value) || 0,
-                    price: parseFloat(document.getElementById("recipeTrozosPrice").value) || 0,
-                },
-                unitCost: unitCost, // Guardar costo unitario calculado
-            };
-
-            if (appState.editingRecipeId === null) {
-                appState.recipes.push(receta);
-                showToast("Receta agregada");
-            } else {
-                const index = appState.recipes.findIndex(r => r.id === appState.editingRecipeId);
-                if (index !== -1) {
-                    appState.recipes[index] = receta;
-                    showToast("Receta actualizada");
-                }
-            }
-
-            appState.editingRecipeId = null;
-            clearRecipeForm();
-            saveData();
-            renderRecipes();
-        }
-
-        // Limpiar formulario de receta
-        function clearRecipeForm() {
-            appState.editingRecipeId = null;
-            document.getElementById("recipeName").value = "";
-            document.getElementById("recipeFrutaQty").value = "";
-            document.getElementById("recipeFrutaPrice").value = "";
-            document.getElementById("recipeKefirQty").value = "";
-            document.getElementById("recipeKefirPrice").value = "";
-            document.getElementById("recipeLecheraQty").value = "";
-            document.getElementById("recipeLecheraPrice").value = "";
-            document.getElementById("recipeSaborizanteQty").value = "";
-            document.getElementById("recipeSaborizantePrice").value = "";
-            document.getElementById("recipeBolsasQty").value = "";
-            document.getElementById("recipeBolsasPrice").value = "";
-            document.getElementById("recipeTrozosQty").value = "";
-            document.getElementById("recipeTrozosPrice").value = "";
-            document.getElementById("unitCost").value = "";
-        }
-
-        // Editar receta
-        function editRecipe(id) {
-            const receta = appState.recipes.find(r => r.id === id);
-            if (!receta) {
-                showToast("Receta no encontrada");
-                return;
-            }
-
-            appState.editingRecipeId = id;
-
-            document.getElementById("recipeName").value = receta.name || "";
-            document.getElementById("recipeFrutaQty").value = receta.fruta.qty;
-            document.getElementById("recipeFrutaPrice").value = receta.fruta.price;
-            document.getElementById("recipeKefirQty").value = receta.kefir.qty;
-            document.getElementById("recipeKefirPrice").value = receta.kefir.price;
-            document.getElementById("recipeLecheraQty").value = receta.lechera.qty;
-            document.getElementById("recipeLecheraPrice").value = receta.lechera.price;
-            document.getElementById("recipeSaborizanteQty").value = receta.saborizante.qty;
-            document.getElementById("recipeSaborizantePrice").value = receta.saborizante.price;
-            document.getElementById("recipeBolsasQty").value = receta.bolsas.qty;
-            document.getElementById("recipeBolsasPrice").value = receta.bolsas.price;
-            document.getElementById("recipeTrozosQty").value = receta.trozos.qty;
-            document.getElementById("recipeTrozosPrice").value = receta.trozos.price;
-
-            calculateUnitCost();
-
-            showSection("recetas", null);
-        }
-
-        // Eliminar receta
-        function deleteRecipe(id) {
-            if (!confirm("¿Seguro que quieres eliminar esta receta?")) return;
-
-            appState.recipes = appState.recipes.filter(r => r.id !== id);
-            saveData();
-            renderRecipes();
-            showToast("Receta eliminada");
-        }
-
-        // Formatear precio
-        function formatPrice(value) {
-            return `$${value.toFixed(2)}`;
-        }
-
-        // Calcular costo unitario por pieza y mostrarlo
-        function calculateUnitCost() {
-            const frutaCost = (parseFloat(document.getElementById("recipeFrutaQty").value) || 0) * (parseFloat(document.getElementById("recipeFrutaPrice").value) || 0);
-            const kefirCost = (parseFloat(document.getElementById("recipeKefirQty").value) || 0) * (parseFloat(document.getElementById("recipeKefirPrice").value) || 0);
-            const lecheraCost = (parseInt(document.getElementById("recipeLecheraQty").value) || 0) * (parseFloat(document.getElementById("recipeLecheraPrice").value) || 0);
-            const saborizanteCost = (parseFloat(document.getElementById("recipeSaborizanteQty").value) || 0) * (parseFloat(document.getElementById("recipeSaborizantePrice").value) || 0);
-            const bolsasQty = parseInt(document.getElementById("recipeBolsasQty").value) || 0;
-            const bolsasCost = bolsasQty * (parseFloat(document.getElementById("recipeBolsasPrice").value) || 0);
-            const trozosCost = (parseInt(document.getElementById("recipeTrozosQty").value) || 0) * (parseFloat(document.getElementById("recipeTrozosPrice").value) || 0);
-
-            const totalCost = frutaCost + kefirCost + lecheraCost + saborizanteCost + bolsasCost + trozosCost;
-
-            let unitCost = 0;
-            if (bolsasQty > 0) {
-                unitCost = totalCost / bolsasQty;
-            }
-
-            document.getElementById("unitCost").value = unitCost > 0 ? `$${unitCost.toFixed(2)}` : "$0.00";
-        }
-
-        // Asignar eventos para inputs de receta para cálculo automático
-        function assignRecipeInputEvents() {
-            const recipeInputs = [
-                "recipeFrutaQty", "recipeFrutaPrice",
-                "recipeKefirQty", "recipeKefirPrice",
-                "recipeLecheraQty", "recipeLecheraPrice",
-                "recipeSaborizanteQty", "recipeSaborizantePrice",
-                "recipeBolsasQty", "recipeBolsasPrice",
-                "recipeTrozosQty", "recipeTrozosPrice"
-            ];
-
-            recipeInputs.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener("input", calculateUnitCost);
-                }
-            });
-        }
-
-        // Exportar recetas a CSV
-        function exportRecipes() {
-            if (appState.recipes.length === 0) {
-                showToast("No hay recetas para exportar");
-                return;
-            }
-
-            let csv = "ID,Nombre,Costo Unitario,Fruta Qty,Fruta Precio,Kefir Qty,Kefir Precio,Lechera Qty,Lechera Precio,Saborizante Qty,Saborizante Precio,Bolsas Qty,Bolsas Precio,Trozos Qty,Trozos Precio\n";
-
-            appState.recipes.forEach(recipe => {
-                const row = [
-                    `"${recipe.id}"`,
-                    `"${recipe.name.replace(/"/g, '""')}"`,
-                    recipe.unitCost.toFixed(2),
-                    recipe.fruta.qty,
-                    recipe.fruta.price.toFixed(2),
-                    recipe.kefir.qty,
-                    recipe.kefir.price.toFixed(2),
-                    recipe.lechera.qty,
-                    recipe.lechera.price.toFixed(2),
-                    recipe.saborizante.qty,
-                    recipe.saborizante.price.toFixed(2),
-                    recipe.bolsas.qty,
-                    recipe.bolsas.price.toFixed(2),
-                    recipe.trozos.qty,
-                    recipe.trozos.price.toFixed(2)
-                ].join(",");
-
-                csv += row + "\n";
-            });
-
-            const blob = new Blob([csv], { type: "text/csv" });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `recetas_congeladas_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
-
-            showToast("Recetas exportadas exitosamente");
-        }
-
-        // Service Worker para PWA
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register(
-                "data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgZSA9PiBlLndhaXRVbnRpbChzZWxmLnNraXBXYWl0aW5nKCkpKTsKc2VsZi5hZGRFdmVudExpc3RlbmVyKCdhY3RpdmF0ZScsIGUgPT4gZS53YWl0VW50aWwoc2VsZi5jbGllbnRzLmNsYWltKCkpKTs="
-            );
-        }
-
-        // Inicializar app
+        // Inicializar la aplicación
         initApp();
     </script>
 </body>
